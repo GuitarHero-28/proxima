@@ -6,7 +6,10 @@
 // types of order 
 enum class OrderType {
     GoodTillCancel, 
-    FillAndKill
+    FillAndKill,
+    FillOrKill,
+    Market,
+    GoodForDay
 };
 
 //side i.e buy or sell

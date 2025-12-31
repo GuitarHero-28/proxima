@@ -8,35 +8,55 @@
 #include <string>
 
 struct Order{
-    OrderType orderType;
-    OrderId orderId;
-    Side side;
-    Price price;
-    Quantity initialQuantity;
-    Quantity remainingQuantity;
+    private:
+    OrderType orderType_;
+    OrderId orderId_;
+    Side side_;
+    Price price_;
+    Quantity initialQuantity_;
+    Quantity remainingQuantity_;
 
+    public:
     // Constructor
-    Order(OrderType _orderType, OrderId _orderId, Side _side, Price _price, Quantity _quantity)
-        : orderType(_orderType)
-        , orderId(_orderId)
-        , side(_side)
-        , price(_price)
-        , initialQuantity(_quantity)
-        , remainingQuantity(_quantity)
+    Order(OrderType orderType, OrderId orderId, Side side, Price price, Quantity quantity)
+        : orderType_(orderType)
+        , orderId_(orderId)
+        , side_(side)
+        , price_(price)
+        , initialQuantity_(quantity)
+        , remainingQuantity_(quantity)
     {
     }
 
+    //getters
+    OrderId GetOrderId() const { return orderId_; }
+    Side GetSide() const { return side_; }
+    Price GetPrice() const { return price_; }
+    OrderType GetOrderType() const { return orderType_; }
+    Quantity GetInitialQuantity() const { return initialQuantity_; }
+    Quantity GetRemainingQuantity() const { return remainingQuantity_; }
+    Quantity GetFilledQuantity() const { return initialQuantity_ - remainingQuantity_; }
+
     bool IsFilled() const 
     {
-        return remainingQuantity == 0; 
+        return remainingQuantity_ == 0; 
     }
 
     void Fill(Quantity quantity)
     {
-        if (quantity > remainingQuantity) 
-             throw std::logic_error(std::format("Order ({}) cannot be filled for more than its remaining quantity.", orderId));
+        if (quantity > remainingQuantity_) 
+             throw std::logic_error(std::format("Order ({}) cannot be filled for more than its remaining quantity.", orderId_));
 
-        remainingQuantity -= quantity;
+        remainingQuantity_ -= quantity;
+    }
+
+    void ToGoodTillCancel(Price price)
+    {
+        if(orderType_ != OrderType::Market) {
+             throw std::logic_error(std::format("Order ({}) cannot have price adjusted, only Market orders can.", orderId_));
+        }
+        price_=price;
+        orderType_ =OrderType::GoodTillCancel;
     }
 };
 
