@@ -24,6 +24,10 @@ void Orderbook::OnOrderMatched(Price price, Quantity quantity, bool isFullyFille
     UpdateLevelData(price, -quantity, isFullyFilled ? -1 : 0);
 }
 
+void Orderbook::OnOrderCancelled(OrderPointer order) {
+    UpdateLevelData(order->GetPrice(), -order->GetInitialQuantity(), -1); // cite: Orderbook.cpp
+}
+
 //logic: Add Order
 Trades Orderbook::AddOrder(OrderPointer order){
 
@@ -35,15 +39,7 @@ Trades Orderbook::AddOrder(OrderPointer order){
 
     // If it's a Market Buy, price it at the highest Ask (worst price)
     // so it crosses the spread and matches everything.
-    if(order->GetOrderType() == OrderType::Market){
-        Price worstAsk = asks_.rbegin()->first;
-        order->ToGoodTillCancel(worstAsk);
-    } else if (order->GetSide() == Side::Sell && !bids_.empty()){
-        Price worstBid = bids_.rbegin()->first;
-        order->ToGoodTillCancel(worstBid);
-    } else {
-        return {}; // rejected ; no liquidity for market order
-    }
+    
 
     //check out our cache (data_) to see if enough quantity exist befor matching
     if(order->GetOrderType() == OrderType::FillOrKill && 
@@ -52,8 +48,26 @@ Trades Orderbook::AddOrder(OrderPointer order){
     }
 
     OrderPointers::iterator iterator;
+    
+    //handle Buy Orders
     if(order->GetSide() == Side::Buy){
         auto& orders = bids_[order->GetPrice()];
+        orders.push_back(order);
+        iterator = std::next(orders.begin(),orders.size()-1);
+    } 
+    //handle Sell Orders (The missing piece!)
+    else {
+      if (order->GetOrderType() == OrderType::Market) {
+        if (order->GetSide() == Side::Buy) {
+            if (asks_.empty()) return {}; // Market Buy needs sellers
+            Price worstAsk = asks_.rbegin()->first;
+            order->ToGoodTillCancel(worstAsk);
+        } else {
+            if (bids_.empty()) return {}; // Market Sell needs buyers
+            Price worstBid = bids_.rbegin()->first;
+            order->ToGoodTillCancel(worstBid);
+        }
+    }  auto& orders = asks_[order->GetPrice()];
         orders.push_back(order);
         iterator = std::next(orders.begin(),orders.size()-1);
     }
