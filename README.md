@@ -86,7 +86,7 @@ cd proxima
 npm install
 
 # Compile the C++ Addon (This builds the 'proxima.node' file)
-cmake-js compile
+npx cmake-js compile
 ```
 
 ---
